@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -18,9 +18,10 @@ import {
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import BusinessCenterOutlinedIcon from "@mui/icons-material/BusinessCenterOutlined";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 
 import { useAuth } from "../context/AuthContext";
+import AuthBackgroundScene from "../components/common/AuthBackgroundScene";
 import colors from "../theme/colors";
 import { fieldSx } from "../theme/formStyles";
 
@@ -35,149 +36,6 @@ const loginSchema = z.object({
     .string()
     .min(1, "Password is required"),
 });
-
-function FloatingParticles() {
-  const particles = [];
-
-  for (let i = 0; i < 55; i++) {
-    particles.push(
-      <mesh
-        key={i}
-        position={[
-          (Math.random() - 0.5) * 13,
-          (Math.random() - 0.5) * 8,
-          (Math.random() - 0.5) * 6,
-        ]}
-      >
-        <sphereGeometry args={[0.025, 8, 8]} />
-        <meshBasicMaterial
-          color="#FFFFFF"
-          transparent
-          opacity={0.35}
-        />
-      </mesh>
-    );
-  }
-
-  return <group>{particles}</group>;
-}
-
-function MainShape() {
-  const meshRef = useRef(null);
-
-  useFrame(({ mouse }) => {
-    if (!meshRef.current) {
-      return;
-    }
-
-    meshRef.current.rotation.x +=
-      (mouse.y * 0.45 - meshRef.current.rotation.x) *
-      0.025;
-
-    meshRef.current.rotation.y +=
-      (mouse.x * 0.65 - meshRef.current.rotation.y) *
-      0.025;
-  });
-
-  return (
-    <mesh
-      ref={meshRef}
-      position={[3.2, 0.3, -1]}
-    >
-      <icosahedronGeometry args={[2.1, 1]} />
-
-      <meshBasicMaterial
-        color="#6F9BB8"
-        wireframe
-        transparent
-        opacity={0.5}
-      />
-    </mesh>
-  );
-}
-
-function SecondaryShapes() {
-  const groupRef = useRef(null);
-
-  useFrame(({ mouse }) => {
-    if (!groupRef.current) {
-      return;
-    }
-
-    groupRef.current.rotation.x +=
-      (mouse.y * 0.25 - groupRef.current.rotation.x) *
-      0.02;
-
-    groupRef.current.rotation.y +=
-      (mouse.x * 0.35 - groupRef.current.rotation.y) *
-      0.02;
-  });
-
-  return (
-    <group ref={groupRef}>
-      <mesh position={[-3.4, 1.5, -1]}>
-        <octahedronGeometry args={[1.1, 0]} />
-
-        <meshBasicMaterial
-          color="#FFFFFF"
-          wireframe
-          transparent
-          opacity={0.2}
-        />
-      </mesh>
-
-      <mesh position={[3.8, -2.1, -2]}>
-        <icosahedronGeometry args={[0.9, 1]} />
-
-        <meshBasicMaterial
-          color="#2F5D7C"
-          wireframe
-          transparent
-          opacity={0.45}
-        />
-      </mesh>
-
-      <mesh position={[-3.2, -2, -1]}>
-        <icosahedronGeometry args={[0.55, 1]} />
-
-        <meshBasicMaterial
-          color="#6F9BB8"
-          wireframe
-          transparent
-          opacity={0.3}
-        />
-      </mesh>
-    </group>
-  );
-}
-
-function ParallaxCamera() {
-  useFrame(({ mouse, camera }) => {
-    camera.position.x +=
-      (mouse.x * 0.9 - camera.position.x) *
-      0.025;
-
-    camera.position.y +=
-      (mouse.y * 0.6 - camera.position.y) *
-      0.025;
-
-    camera.lookAt(0, 0, 0);
-  });
-
-  return null;
-}
-
-function LoginScene() {
-  return (
-    <>
-      <ambientLight intensity={1} />
-      <ParallaxCamera />
-      <MainShape />
-      <SecondaryShapes />
-      <FloatingParticles />
-    </>
-  );
-}
 
 const Login = () => {
   const { login } = useAuth();
@@ -258,7 +116,7 @@ const Login = () => {
             fov: 52,
           }}
         >
-          <LoginScene />
+          <AuthBackgroundScene />
         </Canvas>
       </Box>
 

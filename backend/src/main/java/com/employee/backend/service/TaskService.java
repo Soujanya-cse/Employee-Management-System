@@ -37,7 +37,6 @@ public class TaskService {
                 || !manager.getId().equals(
                 employee.getManagerId()
         )) {
-
             throw new RuntimeException(
                     "You are not authorized to assign this task to this employee."
             );
@@ -48,10 +47,8 @@ public class TaskService {
         int nextId = 1;
 
         for (Task existingTask : tasks) {
-
             if (existingTask.getId() != null
                     && existingTask.getId() >= nextId) {
-
                 nextId = existingTask.getId() + 1;
             }
         }
@@ -64,14 +61,42 @@ public class TaskService {
     }
 
     public List<Task> getAllTasks(
-            Authentication authentication) {
+            Authentication authentication,
+            String status,
+            String priority) {
 
         User manager = userRepository
                 .findByEmail(authentication.getName())
                 .orElseThrow();
 
-        return taskRepository.findByManagerId(
-                manager.getId()
+        boolean allStatus = status.equals("ALL");
+        boolean allPriority = priority.equals("ALL");
+
+        if (allStatus && allPriority) {
+            return taskRepository.findByManagerId(
+                    manager.getId()
+            );
+        }
+
+        if (!allStatus && !allPriority) {
+            return taskRepository
+                    .findByManagerIdAndStatusAndPriority(
+                            manager.getId(),
+                            status,
+                            priority
+                    );
+        }
+
+        if (!allStatus) {
+            return taskRepository.findByManagerIdAndStatus(
+                    manager.getId(),
+                    status
+            );
+        }
+
+        return taskRepository.findByManagerIdAndPriority(
+                manager.getId(),
+                priority
         );
     }
 
@@ -86,16 +111,13 @@ public class TaskService {
         return taskRepository
                 .findById(id)
                 .filter(task -> {
-
                     if (loggedInUser.getType().equals("MANAGER")) {
-
                         return loggedInUser.getId().equals(
                                 task.getManagerId()
                         );
                     }
 
                     if (loggedInUser.getType().equals("EMPLOYEE")) {
-
                         return loggedInUser.getId().equals(
                                 task.getAssignedTo()
                         );
@@ -122,7 +144,6 @@ public class TaskService {
                 && !loggedInUser.getId().equals(
                 employee.getManagerId()
         )) {
-
             throw new RuntimeException(
                     "You are not authorized to view these tasks."
             );
@@ -132,7 +153,6 @@ public class TaskService {
                 && !loggedInUser.getId().equals(
                 employeeId
         )) {
-
             throw new RuntimeException(
                     "You are not authorized to view these tasks."
             );
@@ -164,7 +184,6 @@ public class TaskService {
                 || !manager.getId().equals(
                 employee.getManagerId()
         )) {
-
             throw new RuntimeException(
                     "You are not authorized to assign this task to this employee."
             );
@@ -177,23 +196,18 @@ public class TaskService {
                         )
                 )
                 .map(existingTask -> {
-
                     existingTask.setTitle(
                             updatedTask.getTitle()
                     );
-
                     existingTask.setDescription(
                             updatedTask.getDescription()
                     );
-
                     existingTask.setPriority(
                             updatedTask.getPriority()
                     );
-
                     existingTask.setAssignedTo(
                             updatedTask.getAssignedTo()
                     );
-
                     return taskRepository.save(
                             existingTask
                     );
@@ -284,7 +298,6 @@ public class TaskService {
         if (task == null) {
             return null;
         }
-
         task.setStatus(newStatus);
 
         return taskRepository.save(task);

@@ -31,13 +31,17 @@ public class TaskController {
         );
     }
 
-    @PreAuthorize("hasRole('MANAGER')")
     @GetMapping
+    @PreAuthorize("hasRole('MANAGER')")
     public List<Task> getAllTasks(
+            @RequestParam(defaultValue = "ALL") String status,
+            @RequestParam(defaultValue = "ALL") String priority,
             Authentication authentication) {
 
         return taskService.getAllTasks(
-                authentication
+                authentication,
+                status,
+                priority
         );
     }
 

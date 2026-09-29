@@ -1,5 +1,6 @@
 package com.employee.backend.service;
 
+import com.employee.backend.dto.user.EmployeeWorkloadResponse;
 import com.employee.backend.dto.user.UserRequest;
 import com.employee.backend.dto.user.UserResponse;
 import com.employee.backend.model.User;
@@ -165,6 +166,27 @@ public class UserService {
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
+    }
+
+    public List<UserResponse> getEmployeesWithoutTasks(
+            Authentication authentication) {
+
+        User manager = getLoggedInManager(authentication);
+
+        return userRepository
+                .findEmployeesWithoutTasks(manager.getId())
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
+    }
+
+    public List<EmployeeWorkloadResponse> getEmployeeWorkload(
+            Authentication authentication) {
+
+        User manager = getLoggedInManager(authentication);
+
+        return userRepository
+                .findEmployeeWorkload(manager.getId());
     }
 
     public UserResponse updateUser(

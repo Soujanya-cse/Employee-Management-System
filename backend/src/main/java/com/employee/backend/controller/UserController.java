@@ -1,5 +1,6 @@
 package com.employee.backend.controller;
 
+import com.employee.backend.dto.user.EmployeeWorkloadResponse;
 import com.employee.backend.dto.user.UserRequest;
 import com.employee.backend.dto.user.UserResponse;
 import com.employee.backend.service.UserService;
@@ -78,6 +79,24 @@ public class UserController {
 
         userService.deleteUser(
                 id,
+                authentication
+        );
+    }
+
+    @GetMapping("/employees/without-tasks")
+    public List<UserResponse> getEmployeesWithoutTasks(
+            Authentication authentication) {
+
+        return userService.getEmployeesWithoutTasks(
+                authentication
+        );
+    }
+
+    @GetMapping("/employees/workload")
+    public List<EmployeeWorkloadResponse> getEmployeeWorkload(
+            Authentication authentication) {
+
+        return userService.getEmployeeWorkload(
                 authentication
         );
     }

@@ -13,6 +13,7 @@ import {
   Alert,
   Snackbar,
   Divider,
+  Button,
 } from "@mui/material";
 
 import PersonIcon from "@mui/icons-material/Person";
@@ -23,33 +24,11 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Canvas, useFrame } from "@react-three/fiber";
 
 import api from "../services/api";
+import FloatingParticles from "../components/common/FloatingParticles";
 import TaskCard from "../components/TaskCard";
 import SummaryCard from "../components/dashboard/SummaryCard";
 import dashboardStyles from "../theme/dashboardStyles";
 import colors from "../theme/colors";
-
-function FloatingParticles() {
-  const particles = [];
-
-  for (let i = 0; i < 35; i++) {
-    particles.push(
-      <mesh
-        key={i}
-        position={[
-          (Math.random() - 0.5) * 9,
-          (Math.random() - 0.5) * 5,
-          (Math.random() - 0.5) * 4,
-        ]}
-      >
-        <sphereGeometry args={[0.025, 8, 8]} />
-
-        <meshBasicMaterial color="#FFFFFF" transparent opacity={0.4} />
-      </mesh>,
-    );
-  }
-
-  return <group>{particles}</group>;
-}
 
 function EmployeeScene() {
   const groupRef = useRef(null);
@@ -88,14 +67,20 @@ function EmployeeScene() {
         />
       </mesh>
 
-      <FloatingParticles />
+      <FloatingParticles
+        count={35}
+        spreadX={9}
+        spreadY={5}
+        spreadZ={4}
+        opacity={0.4}
+      />
     </group>
   );
 }
 
 function EmployeeDashboard() {
   const { employeeId } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [employee, setEmployee] = useState(null);
@@ -118,10 +103,7 @@ function EmployeeDashboard() {
      *
      * Manager can access any employee dashboard.
      */
-    if (
-      user.role === "EMPLOYEE" &&
-      user.id !== employeeId
-    ) {
+    if (user.type === "EMPLOYEE" && user.id !== employeeId) {
       navigate(`/employee/${user.id}`, {
         replace: true,
       });
@@ -146,25 +128,18 @@ function EmployeeDashboard() {
        * Use /users/{employeeId} because the manager
        * can view any employee's details.
        */
-      if (user.role === "EMPLOYEE") {
+      if (user.type === "EMPLOYEE") {
         employeeResponse = await api.get("/auth/me");
       } else {
-        employeeResponse = await api.get(
-          `/users/${employeeId}`,
-        );
+        employeeResponse = await api.get(`/users/${employeeId}`);
       }
 
-      const tasksResponse = await api.get(
-        `/tasks/employee/${employeeId}`,
-      );
+      const tasksResponse = await api.get(`/tasks/employee/${employeeId}`);
 
       setEmployee(employeeResponse.data);
       setTasks(tasksResponse.data);
     } catch (error) {
-      console.error(
-        "Error fetching employee data:",
-        error,
-      );
+      console.error("Error fetching employee data:", error);
 
       setEmployee(null);
     } finally {
@@ -172,42 +147,28 @@ function EmployeeDashboard() {
     }
   };
 
-  const handleStatusChange = async (
-    taskId,
-    newStatus,
-  ) => {
+  const handleStatusChange = async (taskId, newStatus) => {
     try {
       setUpdatingTaskId(taskId);
 
-      const response = await api.patch(
-        `/tasks/${taskId}/status`,
-        null,
-        {
-          params: {
-            status: newStatus,
-          },
+      const response = await api.patch(`/tasks/${taskId}/status`, null, {
+        params: {
+          status: newStatus,
         },
-      );
+      });
 
       setTasks((previousTasks) =>
         previousTasks.map((task) =>
-          task.id === taskId
-            ? response.data
-            : task,
+          task.id === taskId ? response.data : task,
         ),
       );
 
-      setMessage(
-        "Task status updated successfully.",
-      );
+      setMessage("Task status updated successfully.");
 
       setMessageType("success");
       setSnackbarOpen(true);
     } catch (error) {
-      console.error(
-        "Error updating task status:",
-        error,
-      );
+      console.error("Error updating task status:", error);
 
       const backendMessage =
         error.response?.data?.message ||
@@ -221,6 +182,11 @@ function EmployeeDashboard() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
@@ -229,9 +195,7 @@ function EmployeeDashboard() {
     (task) => task.status === "COMPLETED",
   ).length;
 
-  const ongoingTasks = tasks.filter(
-    (task) => task.status === "ONGOING",
-  ).length;
+  const ongoingTasks = tasks.filter((task) => task.status === "ONGOING").length;
 
   if (loading) {
     return (
@@ -290,7 +254,6 @@ function EmployeeDashboard() {
 
   return (
     <Box sx={dashboardStyles.page}>
-
       {/* HEADER */}
 
       <Box
@@ -304,8 +267,7 @@ function EmployeeDashboard() {
           background:
             "linear-gradient(135deg, #003153 0%, #00243D 60%, #2F5D7C 100%)",
           color: colors.white,
-          boxShadow:
-            "0 20px 50px rgba(0,49,83,0.18)",
+          boxShadow: "0 20px 50px rgba(0,49,83,0.18)",
         }}
       >
         <Box
@@ -339,10 +301,42 @@ function EmployeeDashboard() {
             alignItems: "center",
           }}
         >
+          {/* LOGOUT - EMPLOYEE ONLY */}
+
+          {user?.type === "EMPLOYEE" && (
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                position: "absolute",
+                top: {
+                  xs: 20,
+                  md: 30,
+                },
+                right: {
+                  xs: 16,
+                  md: 24,
+                },
+                color: colors.white,
+                borderColor: "rgba(255,255,255,0.5)",
+                textTransform: "none",
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
+                "&:hover": {
+                  borderColor: colors.white,
+                  backgroundColor: "rgba(255,255,255,0.08)",
+                },
+              }}
+            >
+              Logout
+            </Button>
+          )}
+
           <Box>
             <Chip
               label={
-                user?.role === "MANAGER"
+                user?.type === "MANAGER"
                   ? "EMPLOYEE DETAILS"
                   : "EMPLOYEE DASHBOARD"
               }
@@ -350,10 +344,8 @@ function EmployeeDashboard() {
               sx={{
                 mb: 2,
                 color: colors.white,
-                backgroundColor:
-                  "rgba(255,255,255,0.12)",
-                border:
-                  "1px solid rgba(255,255,255,0.2)",
+                backgroundColor: "rgba(255,255,255,0.12)",
+                border: "1px solid rgba(255,255,255,0.2)",
                 fontWeight: 700,
                 letterSpacing: 0.8,
                 backdropFilter: "blur(8px)",
@@ -382,7 +374,7 @@ function EmployeeDashboard() {
                 maxWidth: 500,
               }}
             >
-              {user?.role === "MANAGER"
+              {user?.type === "MANAGER"
                 ? "View the employee's assigned tasks and progress."
                 : "Here is an overview of your assigned tasks and progress."}
             </Typography>
@@ -404,16 +396,13 @@ function EmployeeDashboard() {
                   px: 1.8,
                   py: 1,
                   borderRadius: 2,
-                  backgroundColor:
-                    "rgba(255,255,255,0.1)",
+                  backgroundColor: "rgba(255,255,255,0.1)",
                   backdropFilter: "blur(8px)",
                 }}
               >
                 <PersonIcon fontSize="small" />
 
-                <Typography variant="body2">
-                  {employee.id}
-                </Typography>
+                <Typography variant="body2">{employee.id}</Typography>
               </Box>
 
               <Box
@@ -424,16 +413,13 @@ function EmployeeDashboard() {
                   px: 1.8,
                   py: 1,
                   borderRadius: 2,
-                  backgroundColor:
-                    "rgba(255,255,255,0.1)",
+                  backgroundColor: "rgba(255,255,255,0.1)",
                   backdropFilter: "blur(8px)",
                 }}
               >
                 <AssignmentIcon fontSize="small" />
 
-                <Typography variant="body2">
-                  {tasks.length} Tasks
-                </Typography>
+                <Typography variant="body2">{tasks.length} Tasks</Typography>
               </Box>
             </Stack>
           </Box>
@@ -451,7 +437,6 @@ function EmployeeDashboard() {
           },
         }}
       >
-
         {/* SUMMARY CARDS */}
 
         <Box
@@ -486,20 +471,12 @@ function EmployeeDashboard() {
 
         <Box sx={dashboardStyles.sectionHeader}>
           <Box>
-            <Typography
-              variant="h5"
-              sx={dashboardStyles.sectionTitle}
-            >
-              {user?.role === "MANAGER"
-                ? "Employee Tasks"
-                : "My Tasks"}
+            <Typography variant="h5" sx={dashboardStyles.sectionTitle}>
+              {user?.type === "MANAGER" ? "Employee Tasks" : "My Tasks"}
             </Typography>
 
-            <Typography
-              variant="body2"
-              sx={dashboardStyles.sectionSubtitle}
-            >
-              {user?.role === "MANAGER"
+            <Typography variant="body2" sx={dashboardStyles.sectionSubtitle}>
+              {user?.type === "MANAGER"
                 ? "View the tasks assigned to this employee."
                 : "View and manage the tasks assigned to you."}
             </Typography>
@@ -522,10 +499,7 @@ function EmployeeDashboard() {
         {/* TASK LIST */}
 
         {tasks.length === 0 ? (
-          <Paper
-            elevation={0}
-            sx={dashboardStyles.emptyState}
-          >
+          <Paper elevation={0} sx={dashboardStyles.emptyState}>
             <AssignmentIcon
               sx={{
                 fontSize: 48,
@@ -551,7 +525,7 @@ function EmployeeDashboard() {
                 mt: 0.5,
               }}
             >
-              {user?.role === "MANAGER"
+              {user?.type === "MANAGER"
                 ? "This employee currently has no assigned tasks."
                 : "You currently don't have any assigned tasks."}
             </Typography>
@@ -564,14 +538,9 @@ function EmployeeDashboard() {
                 task={task}
                 showStatusActions={true}
                 onStatusChange={(newStatus) =>
-                  handleStatusChange(
-                    task.id,
-                    newStatus,
-                  )
+                  handleStatusChange(task.id, newStatus)
                 }
-                updatingStatus={
-                  updatingTaskId === task.id
-                }
+                updatingStatus={updatingTaskId === task.id}
               />
             ))}
           </Box>
